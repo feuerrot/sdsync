@@ -24,4 +24,9 @@ WAVE.
 * optional: delete source files
 * optional: build some sort of pseudocode-to-python-code-generator…
 
+## setup
+something something fstab, might build something that will work as
+root&non-root
 
+	LABEL=rohdaten  /media/rohdaten auto    noauto,user,defaults    0       0
+	/dev/mmcblk0p1  /media/mmcblk   auto    noauto,user,defaults    0       0
