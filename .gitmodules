@@ -1,0 +1,3 @@
+[submodule "uuhash"]
+	path = uuhash
+	url = https://github.com/feuerrot/uuhash.git
