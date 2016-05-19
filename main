@@ -62,18 +62,25 @@ def determine_subdirectory(file):
 
 def copy_files(files):
 	for file in files:
-		print("{} goes into {}".format(file, os.path.join(default_out, determine_subdirectory(file))))
+		print("{} goes into {}".format(file, os.path.join(default_out, event, determine_subdirectory(file))))
 
 def empty_sd_card():
 	files = find_media_files(default_in, find_extensions)
 	copy_files(files)
 	# remove_files()
 
+
+assert_s((len(sys.argv) > 1), "Usage: {} [event]".format(sys.argv[0]))
+event = sys.argv[1]
+
 assert_s((os.path.exists(default_sd) and os.path.exists(default_ssd)), "SD card or ssd not connected!")
 assert_s((os.path.exists(default_in) and os.path.exists(default_out)), "Source or target directory not found!")
 
+print("mount directories")
 mount(default_in, False)
 mount(default_out, False)
+
+print("current event: {}".format(event))
 
 print("directories mounted")
 try:
@@ -81,5 +88,6 @@ try:
 except Exception as e:
 	print("zomg, something went wrong:\n{}".format(e))
 
+print("umount directories")
 mount(default_in, True)
 mount(default_out, True)
