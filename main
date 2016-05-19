@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+import os
+import subprocess
+
+default_sd  = '/dev/mmcblk0p1'
+default_ssd = '/dev/disk/by-label/rohdaten'
+default_in  = '/media/mmcblk'
+default_out = '/media/rohdaten'
+
+mounted_fs = []
+
+def mount(dst):
+	try:
+		subprocess.run(["mount", dst], check=True)
+	except subprocess.CalledProcessError as e:
+		print(e)
+		exit(1)
+	else:
+		mounted_fs.append(dst)
+
+def umount(dst):
+	try:
+		subprocess.run(["umount", dst], check=True)
+	except subprocess.CalledProcessError as e:
+		print(e)
+		exit(1)
+	else:
+		mounted_fs.remove(dst)
+
+try:
+	assert os.path.exists(default_sd) and os.path.exists(default_ssd)
+except AssertionError:
+	print("SD-Karte oder SSD nicht verbunden")
+	exit(1)
+
+try:
+	assert os.path.exists(default_in) and os.path.exists(default_out)
+except AssertionError:
+	print("Quell- oder Zielverzeichnisse nicht existent")
+	exit(1)
+
+mount(default_in)
+mount(default_out)
+
+print("Verzeichnisse gemounted")
+
+umount(default_in)
+umount(default_out)
