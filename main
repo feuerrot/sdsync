@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import os
+import sys
 import subprocess
+import filecmp
+import datetime
 
 default_sd  = '/dev/mmcblk0p1'
 default_ssd = '/dev/disk/by-label/rohdaten'
@@ -8,41 +11,75 @@ default_in  = '/media/mmcblk'
 default_out = '/media/rohdaten'
 
 mounted_fs = []
+find_extensions = ['wav', 'mts']
 
-def mount(dst):
+class MountError(Exception):
+	def __init__(self, value):
+		self.value = value
+	def __str__(self):
+		return repr(self.value)
+
+def mount(dst, umount):
+	if not umount and dst in mounted_fs:
+		raise MountError("fs already mounted")
+	elif umount and dst not in mounted_fs:
+		raise MountError("fs not mounted")
+
 	try:
-		subprocess.run(["mount", dst], check=True)
+		if not umount:
+			subprocess.run(["mount", dst], check=True)
+		else:
+			subprocess.run(["umount", dst], check=True)
 	except subprocess.CalledProcessError as e:
 		print(e)
 		exit(1)
 	else:
-		mounted_fs.append(dst)
+		if not umount:
+			mounted_fs.append(dst)
+		else:
+			mounted_fs.remove(dst)
 
-def umount(dst):
+def assert_s(condition, error):
 	try:
-		subprocess.run(["umount", dst], check=True)
-	except subprocess.CalledProcessError as e:
-		print(e)
+		assert condition
+	except AssertionError:
+		print(error)
 		exit(1)
-	else:
-		mounted_fs.remove(dst)
 
+def find_media_files(root, ext):
+	rtn = []
+	for (dirpath, dirnames, filenames) in os.walk(root):
+		for file in filenames:
+			for extension in ext:
+				if file.lower().endswith(extension):
+					rtn.append(os.path.join(dirpath, file))
+					determine_subdirectory(os.path.join(dirpath, file))
+	return rtn
+
+def determine_subdirectory(file):
+	t = os.stat(file).st_ctime
+	return datetime.date.fromtimestamp(t).isoformat()
+
+def copy_files(files):
+	for file in files:
+		print("{} goes into {}".format(file, os.path.join(default_out, determine_subdirectory(file))))
+
+def empty_sd_card():
+	files = find_media_files(default_in, find_extensions)
+	copy_files(files)
+	# remove_files()
+
+assert_s((os.path.exists(default_sd) and os.path.exists(default_ssd)), "SD card or ssd not connected!")
+assert_s((os.path.exists(default_in) and os.path.exists(default_out)), "Source or target directory not found!")
+
+mount(default_in, False)
+mount(default_out, False)
+
+print("directories mounted")
 try:
-	assert os.path.exists(default_sd) and os.path.exists(default_ssd)
-except AssertionError:
-	print("SD-Karte oder SSD nicht verbunden")
-	exit(1)
+	empty_sd_card()
+except Exception as e:
+	print("zomg, something went wrong:\n{}".format(e))
 
-try:
-	assert os.path.exists(default_in) and os.path.exists(default_out)
-except AssertionError:
-	print("Quell- oder Zielverzeichnisse nicht existent")
-	exit(1)
-
-mount(default_in)
-mount(default_out)
-
-print("Verzeichnisse gemounted")
-
-umount(default_in)
-umount(default_out)
+mount(default_in, True)
+mount(default_out, True)
