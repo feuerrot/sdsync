@@ -32,8 +32,7 @@ def mount(dst, umount):
 		else:
 			subprocess.run(["umount", dst], check=True)
 	except subprocess.CalledProcessError as e:
-		print(e)
-		exit(1)
+		raise MountError(e)
 	else:
 		if not umount:
 			mounted_fs.append(dst)
@@ -67,10 +66,11 @@ def copy_files(files):
 		print("{} goes into {}".format(src, dst))
 		if os.path.exists(dst):
 			print("file already exists at destination")
-			if uuhash.UUHash(open(src, 'rb')) == uuhash.UUHash(open(dst, 'rb')):
-				print("files are equal!")
-			else:
-				print("files are different!")
+			with open(src, 'rb') as fd_a, open(dst, 'rb') as fd_b:
+				if uuhash.UUHash(fd_a) == uuhash.UUHash(fd_b):
+					print("files are equal!")
+				else:
+					print("files are different!")
 
 def empty_sd_card():
 	files = find_media_files(default_in, find_extensions)
